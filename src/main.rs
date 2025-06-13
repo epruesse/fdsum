@@ -1,6 +1,5 @@
 use anyhow::Result;
 use clap::Parser;
-use hex;
 use rayon::ThreadPoolBuilder;
 mod algo;
 mod config;

@@ -1,6 +1,5 @@
 use crate::algo;
 use clap::{Parser, ValueEnum};
-use num_cpus;
 use sha2::{Digest, Sha256};
 use std::path::PathBuf;
 
