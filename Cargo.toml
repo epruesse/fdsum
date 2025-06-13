@@ -2,6 +2,12 @@
 name = "fdsum"
 version = "0.1.0"
 edition = "2024"
+authors = ["Elmar Pruesse <pruessee@njhealth.org>"]
+description = "Calculate checksums on directories"
+license = "GPL-3.0-or-later"
+keywords = ["commandline", "checksum", "sha256", "blake3", "directory"]
+categories = ["command-line-utilities"]
+
 
 [dependencies]
 anyhow = "1.0.98"
