@@ -1,10 +1,10 @@
-use hex;
 use anyhow::Result;
 use clap::Parser;
+use hex;
 use rayon::ThreadPoolBuilder;
-mod hash;
 mod algo;
 mod config;
+mod hash;
 
 fn main() -> Result<()> {
     let args = config::Args::try_parse()?;
@@ -24,5 +24,3 @@ fn main() -> Result<()> {
     println!("{{hash: '{}'}}", hex::encode(res));
     Ok(())
 }
-
-

@@ -1,9 +1,8 @@
-use clap::{Parser, ValueEnum};
-use std::path::PathBuf;
-use sha2::{Digest, Sha256};
-use num_cpus;
 use crate::algo;
-
+use clap::{Parser, ValueEnum};
+use num_cpus;
+use sha2::{Digest, Sha256};
+use std::path::PathBuf;
 
 #[derive(ValueEnum, Clone, Debug)]
 pub enum HashAlgorithm {
@@ -32,7 +31,7 @@ pub struct Args {
 
     /// Number of parallel threads
     #[arg(short = 't', long)]
-    threads: Option<usize>
+    threads: Option<usize>,
 }
 
 #[derive(Debug)]

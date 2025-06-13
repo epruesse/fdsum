@@ -1,5 +1,5 @@
-use sha2::{Sha256, Digest};
 use blake3;
+use sha2::{Digest, Sha256};
 
 pub trait Hasher: Send {
     fn update(&mut self, data: &[u8]);
