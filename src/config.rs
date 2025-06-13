@@ -21,6 +21,9 @@ pub struct Args {
 
     #[arg(short = 'm', long, default_value = "blake3")]
     algorithm: HashAlgorithm,
+
+    #[arg(short = 'b', long, default_value_t = 128)]
+    block_size: usize,
 }
 
 #[derive(Debug)]
@@ -28,6 +31,7 @@ pub struct Config {
     pub path: PathBuf,
     pub verbose: bool,
     pub algorithm: HashAlgorithm,
+    pub block_size: usize,
 }
 
 impl Config {
@@ -45,6 +49,7 @@ impl From<Args> for Config {
             path: args.path,
             verbose: args.verbose,
             algorithm: args.algorithm,
+            block_size: args.block_size * 1024,
         }
     }
 }
