@@ -1,0 +1,16 @@
+[package]
+name = "fdsum"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+anyhow = "1.0.98"
+blake3 = "1.8.2"
+clap = { version = "4.5.40", features = ["derive"] }
+generic-array = "1.2.0"
+hex = "0.4.3"
+hex-literal = "1.0.0"
+md-5 = "0.10.6"
+rayon = "1.10.0"
+sha2 = "0.10.9"
+typenum = "1.18.0"
