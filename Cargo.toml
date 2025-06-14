@@ -1,19 +1,19 @@
 [package]
 name = "fdsum"
-version = "0.1.0"
+version = "0.2.0-dev"
 edition = "2024"
 authors = ["Elmar Pruesse <pruessee@njhealth.org>"]
 description = "Calculate checksums on directories"
 license = "GPL-3.0-or-later"
 keywords = ["commandline", "checksum", "sha256", "blake3", "directory"]
-categories = ["command-line-utilities"]
+categories = ["command-line-utilities", "filesystem"]
 
 
 [dependencies]
 anyhow = "1.0.98"
 blake3 = "1.8.2"
 byteorder = "1.5.0"
-clap = { version = "4.5.40", features = ["derive"] }
+clap = { version = "4.5.40", features = ["derive", "wrap_help"] }
 generic-array = "1.2.0"
 hex = "0.4.3"
 hex-literal = "1.0.0"
@@ -22,3 +22,9 @@ num_cpus = "1.17.0"
 rayon = "1.10.0"
 sha2 = "0.10.9"
 typenum = "1.18.0"
+
+[profile.release]
+codegen-units = 1
+debug = 0
+lto = true
+strip = true

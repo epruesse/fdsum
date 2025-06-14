@@ -10,7 +10,7 @@ pub enum HashAlgorithm {
 }
 
 #[derive(Parser)]
-#[command(version, about, long_about = None)]
+#[command(version, about, long_about = None, max_term_width=100)]
 /// Calculate checksums on files and directories recursively
 pub struct Args {
     /// Enable verbose output
@@ -21,23 +21,23 @@ pub struct Args {
     #[arg(value_name = "PATH")]
     path: PathBuf,
 
-    /// Hash algorithm to use
+    /// Hash algorithm
     #[arg(short = 'm', long, default_value = "sha256")]
     algorithm: HashAlgorithm,
 
-    /// Block size for reading files
+    /// Block size for reading files in kiB.
     #[arg(short = 'b', long, default_value_t = 128)]
     block_size: usize,
 
-    /// Number of parallel threads
+    /// Number of parallel threads [default: lesser of 8 and #cores]
     #[arg(short = 't', long)]
-    threads: Option<usize>,
+    num_threads: Option<usize>,
 
-    /// Exclude file content
+    /// Exclude file contents
     #[arg(short = 'C', long)]
     no_content: bool,
 
-    /// Exclude all permissions (equal to -MOP)
+    /// Exclude all permissions (equal to -MOG)
     #[arg(short = 'P', long)]
     no_perms: bool,
 
@@ -45,17 +45,28 @@ pub struct Args {
     #[arg(short = 'M', long)]
     no_mode: bool,
 
-    /// Exclude owner
+    /// Exclude owner UID
     #[arg(short = 'O', long)]
     no_owner: bool,
 
-    /// Exclude group
+    /// Exclude owner GID
     #[arg(short = 'G', long)]
     no_group: bool,
 
-    /// Exclude timestamps
+    /// Exclude mtime (last data modification)
     #[arg(short = 'T', long)]
-    no_timestamps: bool,
+    no_mtime: bool,
+
+    /// Include atime (last access). We may cause a change to the
+    /// atime ourselves while reading files.
+    #[arg(long)]
+    atime: bool,
+
+    /// Include ctime (last status change). The ctime cannot be set by
+    /// tools such as rsync and may be updated unexpectedly (e.g. by
+    /// creating a hard link on a file).
+    #[arg(long)]
+    ctime: bool,
 }
 
 #[derive(Debug)]
@@ -67,12 +78,12 @@ pub struct Config {
     pub threads: usize,
 
     pub include_file_content: bool,
-    pub include_mode: bool,  // -p
-    pub include_uid: bool,   // -o and -g
-    pub include_gid: bool,   // -o and -g
-    pub include_ctime: bool, // -t
-    pub include_mtime: bool, // -t
-    pub include_atime: bool, // -t
+    pub include_mode: bool,
+    pub include_uid: bool,
+    pub include_gid: bool,
+    pub include_ctime: bool,
+    pub include_mtime: bool,
+    pub include_atime: bool,
 }
 
 impl Config {
@@ -91,14 +102,14 @@ impl From<Args> for Config {
             verbose: args.verbose,
             algorithm: args.algorithm,
             block_size: args.block_size * 1024,
-            threads: args.threads.unwrap_or(num_cpus::get().min(8)),
+            threads: args.num_threads.unwrap_or(num_cpus::get().min(8)),
             include_file_content: !args.no_content,
             include_mode: !args.no_perms && !args.no_mode,
             include_uid: !args.no_perms && !args.no_owner,
             include_gid: !args.no_perms && !args.no_group,
-            include_ctime: !args.no_timestamps,
-            include_mtime: !args.no_timestamps,
-            include_atime: !args.no_timestamps,
+            include_mtime: !args.no_mtime,
+            include_ctime: args.ctime,
+            include_atime: args.atime,
         }
     }
 }

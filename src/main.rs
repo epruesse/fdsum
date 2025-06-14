@@ -6,14 +6,13 @@ mod algo;
 mod config;
 mod hash;
 
-
 fn main() -> ExitCode {
     match run() {
         Ok(()) => ExitCode::SUCCESS,
         Err(err) => {
             eprintln!("Error: {}", err);
             ExitCode::FAILURE
-        },
+        }
     }
 }
 
