@@ -22,7 +22,7 @@ pub struct Args {
     path: PathBuf,
 
     /// Hash algorithm to use
-    #[arg(short = 'm', long, default_value = "blake3")]
+    #[arg(short = 'm', long, default_value = "sha256")]
     algorithm: HashAlgorithm,
 
     /// Block size for reading files
