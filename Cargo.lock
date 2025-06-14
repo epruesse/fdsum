@@ -244,7 +244,7 @@ dependencies = [
 
 [[package]]
 name = "fdsum"
-version = "0.2.0-dev"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "blake3",
