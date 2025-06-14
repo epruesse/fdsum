@@ -1,6 +1,6 @@
 [package]
 name = "fdsum"
-version = "0.1.0-alpha1"
+version = "0.1.0"
 edition = "2024"
 authors = ["Elmar Pruesse <pruessee@njhealth.org>"]
 description = "Calculate checksums on directories"
