@@ -32,7 +32,7 @@ pub fn hash_entry(config: &Config, path: &Path) -> Result<[u8; 32]> {
         anyhow::bail!("file type unknown: {}", path.display());
     }
 
-    Ok(hasher.finalize().into())
+    Ok(hasher.finalize())
 }
 
 pub fn hash_meta(config: &Config, meta: &std::fs::Metadata) -> Result<[u8; 32]> {
@@ -63,7 +63,7 @@ pub fn hash_meta(config: &Config, meta: &std::fs::Metadata) -> Result<[u8; 32]> 
     let mut hasher = config.hasher();
     let len = cursor.position() as usize;
     hasher.update(&buf[..len]);
-    Ok(hasher.finalize().into())
+    Ok(hasher.finalize())
 }
 
 pub fn hash_file(config: &Config, path: &Path) -> Result<[u8; 32]> {
@@ -80,7 +80,7 @@ pub fn hash_file(config: &Config, path: &Path) -> Result<[u8; 32]> {
         }
         hasher.update(&buf[..n]);
     }
-    Ok(hasher.finalize().into())
+    Ok(hasher.finalize())
 }
 
 pub fn hash_dir(config: &Config, path: &Path) -> Result<[u8; 32]> {
@@ -97,5 +97,5 @@ pub fn hash_dir(config: &Config, path: &Path) -> Result<[u8; 32]> {
         hasher.update(&h);
     }
 
-    Ok(hasher.finalize().into())
+    Ok(hasher.finalize())
 }
