@@ -37,6 +37,10 @@ pub struct Args {
     #[arg(short = 'C', long)]
     no_content: bool,
 
+    /// Exclude size
+    #[arg(short = 'S', long)]
+    no_size: bool,
+
     /// Exclude all permissions (equal to -MOG)
     #[arg(short = 'P', long)]
     no_perms: bool,
@@ -78,6 +82,7 @@ pub struct Config {
     pub threads: usize,
 
     pub include_file_content: bool,
+    pub include_size: bool,
     pub include_mode: bool,
     pub include_uid: bool,
     pub include_gid: bool,
@@ -104,6 +109,7 @@ impl From<Args> for Config {
             block_size: args.block_size * 1024,
             threads: args.num_threads.unwrap_or(num_cpus::get().min(8)),
             include_file_content: !args.no_content,
+            include_size: !args.no_size,
             include_mode: !args.no_perms && !args.no_mode,
             include_uid: !args.no_perms && !args.no_owner,
             include_gid: !args.no_perms && !args.no_group,

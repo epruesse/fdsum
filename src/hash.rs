@@ -44,6 +44,9 @@ pub fn hash_meta(config: &Config, meta: &std::fs::Metadata) -> Result<[u8; 32]> 
         // don't really care
         cursor.write_u32::<LittleEndian>(meta.mode())?;
     }
+    if config.include_size {
+        cursor.write_u64::<LittleEndian>(meta.size())?;
+    }
     if config.include_uid {
         cursor.write_u32::<LittleEndian>(meta.uid())?;
     }
