@@ -17,8 +17,7 @@ fn main() -> Result<()> {
         .num_threads(config.threads)
         .build_global()?;
 
-    let mut res = [0u8; 32];
-    hash::hash_entry(&config, &config.path, &mut res)?;
+    let res = hash::hash_entry(&config, &config.path)?;
 
     println!("{{hash: '{}'}}", hex::encode(res));
     Ok(())

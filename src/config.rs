@@ -11,6 +11,7 @@ pub enum HashAlgorithm {
 
 #[derive(Parser)]
 #[command(name = "fdsum", version, about, long_about = None)]
+/// Calculate checksums on files and directories recursively
 pub struct Args {
     /// Enable verbose output
     #[arg(short, long, global = true)]
@@ -31,6 +32,30 @@ pub struct Args {
     /// Number of parallel threads
     #[arg(short = 't', long)]
     threads: Option<usize>,
+
+    /// Exclude file content
+    #[arg(short = 'C', long)]
+    no_content: bool,
+
+    /// Exclude all permissions (equal to -MOP)
+    #[arg(short = 'P', long)]
+    no_perms: bool,
+
+    /// Exclude mode bits
+    #[arg(short = 'M', long)]
+    no_mode: bool,
+
+    /// Exclude owner
+    #[arg(short = 'O', long)]
+    no_owner: bool,
+
+    /// Exclude group
+    #[arg(short = 'G', long)]
+    no_group: bool,
+
+    /// Exclude timestamps
+    #[arg(short = 'T', long)]
+    no_timestamps: bool,
 }
 
 #[derive(Debug)]
@@ -40,6 +65,14 @@ pub struct Config {
     pub algorithm: HashAlgorithm,
     pub block_size: usize,
     pub threads: usize,
+
+    pub include_file_content: bool,
+    pub include_mode: bool,  // -p
+    pub include_uid: bool,   // -o and -g
+    pub include_gid: bool,   // -o and -g
+    pub include_ctime: bool, // -t
+    pub include_mtime: bool, // -t
+    pub include_atime: bool, // -t
 }
 
 impl Config {
@@ -59,6 +92,13 @@ impl From<Args> for Config {
             algorithm: args.algorithm,
             block_size: args.block_size * 1024,
             threads: args.threads.unwrap_or(num_cpus::get().min(8)),
+            include_file_content: !args.no_content,
+            include_mode: !args.no_perms && !args.no_mode,
+            include_uid: !args.no_perms && !args.no_owner,
+            include_gid: !args.no_perms && !args.no_group,
+            include_ctime: !args.no_timestamps,
+            include_mtime: !args.no_timestamps,
+            include_atime: !args.no_timestamps,
         }
     }
 }
