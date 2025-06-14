@@ -10,7 +10,7 @@ pub enum HashAlgorithm {
 }
 
 #[derive(Parser)]
-#[command(name = "fdsum", version, about, long_about = None)]
+#[command(version, about, long_about = None)]
 /// Calculate checksums on files and directories recursively
 pub struct Args {
     /// Enable verbose output

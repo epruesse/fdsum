@@ -1,12 +1,24 @@
 use anyhow::Result;
 use clap::Parser;
 use rayon::ThreadPoolBuilder;
+use std::process::ExitCode;
 mod algo;
 mod config;
 mod hash;
 
-fn main() -> Result<()> {
-    let args = config::Args::try_parse()?;
+
+fn main() -> ExitCode {
+    match run() {
+        Ok(()) => ExitCode::SUCCESS,
+        Err(err) => {
+            eprintln!("Error: {}", err);
+            ExitCode::FAILURE
+        },
+    }
+}
+
+fn run() -> Result<()> {
+    let args = config::Args::parse();
     let config: config::Config = args.into();
 
     if config.verbose {
