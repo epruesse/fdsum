@@ -17,9 +17,11 @@ clap = { version = "4.5.40", features = ["derive", "wrap_help"] }
 generic-array = "1.2.0"
 hex = "0.4.3"
 hex-literal = "1.0.0"
+indicatif = "0.17.11"
 md-5 = "0.10.6"
 num_cpus = "1.17.0"
 rayon = "1.10.0"
+serde_json = "1.0.140"
 sha2 = "0.10.9"
 typenum = "1.18.0"
 

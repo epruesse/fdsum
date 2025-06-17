@@ -1,7 +1,8 @@
-use crate::algo;
+use crate::{algo, stats::SharedStats};
 use clap::{Parser, ValueEnum};
 use sha2::{Digest, Sha256};
 use std::path::PathBuf;
+use std::sync::Arc;
 
 #[derive(ValueEnum, Clone, Debug)]
 pub enum HashAlgorithm {
@@ -89,6 +90,8 @@ pub struct Config {
     pub include_ctime: bool,
     pub include_mtime: bool,
     pub include_atime: bool,
+
+    pub stats: Arc<SharedStats>,
 }
 
 impl Config {
@@ -116,6 +119,8 @@ impl From<Args> for Config {
             include_mtime: !args.no_mtime,
             include_ctime: args.ctime,
             include_atime: args.atime,
+
+            stats: Arc::new(SharedStats::new()),
         }
     }
 }

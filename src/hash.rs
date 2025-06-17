@@ -17,6 +17,7 @@ pub fn hash_entry(config: &Config, path: &Path) -> Result<[u8; 32]> {
     if filetype.is_dir() {
         hasher.update(&hash_dir(config, path)?);
     } else if filetype.is_file() {
+        config.stats.add_bytes(meta.size());
         if config.include_file_content {
             hasher.update(&hash_file(config, path)?);
         }
@@ -31,6 +32,7 @@ pub fn hash_entry(config: &Config, path: &Path) -> Result<[u8; 32]> {
     } else {
         anyhow::bail!("file type unknown: {}", path.display());
     }
+    config.stats.done_entries(1);
 
     Ok(hasher.finalize())
 }
@@ -84,6 +86,7 @@ pub fn hash_file(config: &Config, path: &Path) -> Result<[u8; 32]> {
             break;
         }
         hasher.update(&buf[..n]);
+        config.stats.done_bytes(n as u64);
     }
     Ok(hasher.finalize())
 }
@@ -91,6 +94,7 @@ pub fn hash_file(config: &Config, path: &Path) -> Result<[u8; 32]> {
 pub fn hash_dir(config: &Config, path: &Path) -> Result<[u8; 32]> {
     let mut entries: Vec<_> = fs::read_dir(path)?.filter_map(Result::ok).collect();
     entries.par_sort_by_key(|e| e.file_name());
+    config.stats.add_entries(entries.len() as u64);
 
     let hashes: Vec<[u8; 32]> = entries
         .par_iter()
