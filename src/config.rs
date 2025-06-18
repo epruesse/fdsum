@@ -1,6 +1,10 @@
 use crate::{algo, stats::SharedStats};
+use anyhow::{Result, anyhow};
 use clap::{Parser, ValueEnum};
+use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
+use std::convert::TryFrom;
+use std::fmt;
 use std::path::PathBuf;
 use std::sync::Arc;
 
@@ -8,6 +12,16 @@ use std::sync::Arc;
 pub enum HashAlgorithm {
     Sha256,
     Blake3,
+}
+
+impl fmt::Display for HashAlgorithm {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let s = match self {
+            HashAlgorithm::Sha256 => "sha256",
+            HashAlgorithm::Blake3 => "blake3",
+        };
+        write!(f, "{}", s)
+    }
 }
 
 #[derive(Parser)]
@@ -20,7 +34,7 @@ pub struct Args {
 
     /// The path to checksum
     #[arg(value_name = "PATH")]
-    path: PathBuf,
+    path: Option<PathBuf>,
 
     /// Hash algorithm
     #[arg(short = 'm', long, default_value = "sha256")]
@@ -72,15 +86,24 @@ pub struct Args {
     /// creating a hard link on a file).
     #[arg(long)]
     ctime: bool,
+
+    /// Set via flags string. This overrides all other settings.
+    #[arg(long, value_name = "STRING")]
+    flags: Option<String>,
+
+    /// Verify mode: provide fdsum json to validate
+    #[arg(long, short = 'c', value_name = "FILE")]
+    pub verify: Option<String>,
 }
 
 #[derive(Debug)]
 pub struct Config {
-    pub path: PathBuf,
+    pub path: Option<PathBuf>,
     pub verbose: bool,
     pub algorithm: HashAlgorithm,
     pub block_size: usize,
     pub threads: usize,
+    pub verify: Option<String>,
 
     pub include_file_content: bool,
     pub include_size: bool,
@@ -101,16 +124,70 @@ impl Config {
             HashAlgorithm::Sha256 => Box::new(algo::Blake3Wrapper::new()),
         }
     }
+
+    pub fn flags_string(&self) -> String {
+        let mut flags = String::new();
+        if self.include_file_content {
+            flags.push('c');
+        }
+        if self.include_size {
+            flags.push('s');
+        }
+        if self.include_mode {
+            flags.push('p');
+        }
+        if self.include_uid {
+            flags.push('u');
+        }
+        if self.include_gid {
+            flags.push('g');
+        }
+        if self.include_ctime {
+            flags.push('t');
+        }
+        if self.include_mtime {
+            flags.push('m');
+        }
+        if self.include_atime {
+            flags.push('a');
+        }
+
+        format!("v1:{}:{}", self.algorithm, flags)
+    }
+
+    pub fn set_flags_from_string(&mut self, flags: &str) -> Result<()> {
+        let parts: Vec<&str> = flags.split(':').collect();
+        if parts.len() != 3 || parts[0] != "v1" {
+            return Err(anyhow!("Unsupported config flags string format"));
+        }
+
+        self.algorithm = HashAlgorithm::from_str(parts[1], false)
+            .expect("unknown algorithm in config flag string");
+
+        self.include_file_content = parts[2].contains('c');
+        self.include_size = parts[2].contains('s');
+        self.include_mode = parts[2].contains('p');
+        self.include_uid = parts[2].contains('u');
+        self.include_gid = parts[2].contains('g');
+        self.include_ctime = parts[2].contains('t');
+        self.include_mtime = parts[2].contains('m');
+        self.include_atime = parts[2].contains('a');
+
+        Ok(())
+    }
 }
 
-impl From<Args> for Config {
-    fn from(args: Args) -> Self {
-        Self {
+impl TryFrom<Args> for Config {
+    type Error = anyhow::Error;
+
+    fn try_from(args: Args) -> Result<Self> {
+        let mut obj = Self {
             path: args.path,
             verbose: args.verbose,
             algorithm: args.algorithm,
             block_size: args.block_size * 1024,
             threads: args.num_threads.unwrap_or(num_cpus::get().min(8)),
+            verify: args.verify,
             include_file_content: !args.no_content,
             include_size: !args.no_size,
             include_mode: !args.no_perms && !args.no_mode,
@@ -121,6 +198,46 @@ impl From<Args> for Config {
             include_atime: args.atime,
 
             stats: Arc::new(SharedStats::new()),
+        };
+        if let Some(flags) = args.flags {
+            obj.set_flags_from_string(flags.as_str())?;
+        }
+        if obj.path.is_none() && obj.verify.is_none() {
+            return Err(anyhow!("Neither PATH nor verify FILE specified"));
+        }
+        Ok(obj)
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct HashResultJson {
+    pub name: PathBuf,
+    pub hash: String,
+    pub flags: String,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub entries: Option<u64>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub bytes: Option<u64>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub elapsed_seconds: Option<f64>,
+}
+
+impl HashResultJson {
+    pub fn from_result(config: &Config, hash: &[u8]) -> Self {
+        let stats = config.stats.snapshot();
+        let elapsed = (stats.elapsed.as_secs_f64() * 100.0).round() / 100.0;
+
+        HashResultJson {
+            name: config.path.clone().unwrap(),
+            hash: hex::encode(hash),
+            flags: config.flags_string(),
+
+            entries: Some(stats.entries_total),
+            bytes: Some(stats.bytes_total),
+            elapsed_seconds: Some(elapsed),
         }
     }
 }

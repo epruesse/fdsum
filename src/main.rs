@@ -1,12 +1,16 @@
-use anyhow::Result;
+use anyhow::{Result, anyhow};
 use clap::Parser;
 use rayon::ThreadPoolBuilder;
+use std::fs::File;
+use std::io::{self, Read};
 use std::{io::IsTerminal, process::ExitCode};
 
 mod algo;
 mod config;
 mod hash;
 mod stats;
+
+use config::HashResultJson;
 
 fn main() -> ExitCode {
     match run() {
@@ -20,7 +24,7 @@ fn main() -> ExitCode {
 
 fn run() -> Result<()> {
     let args = config::Args::parse();
-    let config: config::Config = args.into();
+    let mut config = config::Config::try_from(args)?;
 
     if config.verbose {
         todo!("verbose mode not implemented");
@@ -34,18 +38,42 @@ fn run() -> Result<()> {
         config.stats.clone().spawn_display_thread();
     }
 
-    let res = hash::hash_entry(&config, &config.path)?;
-    let stats = config.stats.snapshot();
+    let reference: Option<HashResultJson> = match config.verify.as_deref() {
+        Some(verify) => {
+            let reader: Box<dyn Read> = if verify == "-" {
+                Box::new(io::stdin())
+            } else {
+                Box::new(File::open(verify)?)
+            };
 
-    let js = serde_json::json!({
-        "name": config.path.file_name(),
-        "entries": stats.entries_total,
-        "bytes": stats.bytes_total,
-        "elapsed_seconds": (stats.elapsed.as_secs_f64() * 100.0).round()/100.0,
-        "hash": hex::encode(res),
-    });
+            let json: HashResultJson = serde_json::from_reader(reader)?;
+            config.set_flags_from_string(&json.flags)?;
 
-    println!("{}", serde_json::to_string_pretty(&js)?);
+            if config.path.is_none() {
+                config.path = Some(json.name.clone());
+            }
 
-    Ok(())
+            Some(json)
+        }
+        None => None,
+    };
+
+    let hash = hash::hash_entry(&config, &config.path.clone().unwrap())?;
+    let result = HashResultJson::from_result(&config, &hash);
+
+    match reference {
+        Some(reference) => {
+            if reference.hash == result.hash {
+                println!("{}: Ok", result.name.display());
+                Ok(())
+            } else {
+                println!("{}: Mismatch", result.name.display());
+                Err(anyhow!("Checksums did not match"))
+            }
+        }
+        None => {
+            println!("{}", serde_json::to_string_pretty(&result)?);
+            Ok(())
+        }
+    }
 }

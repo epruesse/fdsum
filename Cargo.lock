@@ -282,6 +282,7 @@ dependencies = [
  "md-5",
  "num_cpus",
  "rayon",
+ "serde",
  "serde_json",
  "sha2",
  "typenum",
