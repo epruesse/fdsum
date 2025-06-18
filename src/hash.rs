@@ -74,8 +74,15 @@ pub fn hash_meta(config: &Config, meta: &std::fs::Metadata) -> Result<[u8; 32]> 
 }
 
 pub fn hash_file(config: &Config, path: &Path) -> Result<[u8; 32]> {
-    let file =
-        fs::File::open(path).with_context(|| format!("Failed to open file: {}", path.display()))?;
+    let file = fs::File::open(path).map_err(|e| {
+        let errno = e.raw_os_error().unwrap_or(-1);
+        anyhow::anyhow!(
+            "Failed to open file: {} (errno {}): {}",
+            path.display(),
+            errno,
+            e
+        )
+    })?;
     let mut reader = BufReader::new(file);
     let mut hasher = config.hasher();
     let mut buf = vec![0u8; config.block_size];
@@ -92,13 +99,16 @@ pub fn hash_file(config: &Config, path: &Path) -> Result<[u8; 32]> {
 }
 
 pub fn hash_dir(config: &Config, path: &Path) -> Result<[u8; 32]> {
-    let mut entries: Vec<_> = fs::read_dir(path)?.filter_map(Result::ok).collect();
-    entries.par_sort_by_key(|e| e.file_name());
+    let mut entries = Vec::new();
+    for entry in fs::read_dir(path)? {
+        entries.push(entry?.path());
+    }
+    entries.sort();
     config.stats.add_entries(entries.len() as u64);
 
     let hashes: Vec<[u8; 32]> = entries
         .par_iter()
-        .map(|entry| hash_entry(config, &entry.path()))
+        .map(|entry| hash_entry(config, entry))
         .collect::<Result<_>>()?;
 
     let mut hasher = config.hasher();
